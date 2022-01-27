@@ -1,0 +1,28 @@
+service: aws-nodejs-lambda-starter
+frameworkVersion: '2 || 3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: '20201221'
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
+
+plugins:
+  - serverless-newrelic-lambda-layers
+
+custom:
+  newRelic:
+    accountId: 3400472
+    apiKey: NRAK-BAB5ZRMHQ59ZDKSYQV8U6P9IKEP
+    linkedAccount: your-new-relic-integration-account-name-here
+    enableExtension: true
+    enableIntegration: true
+    logEnabled: true
+    cloudWatchFilter: "*"
