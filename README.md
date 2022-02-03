@@ -5,7 +5,7 @@ This tutorial demonstrates how to create brand new AWS Lambda app using Serverle
 At the end of this tutorial, you will be able to:
 
 -   create a deploy a simple HTTP Lambda function using Node.js and Serverless framework
--   enable (New Relic Lambda monitoring)[https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/enable-aws-lambda-monitoring]
+-   enable [New Relic Lambda monitoring](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/enable-aws-lambda-monitoring)
 -   view APM, Distributed Tracing, Logs In Context for the Lambda function in New Relic One
 
 ## Step 1: create and deploy new Lambda using Serverless framework
