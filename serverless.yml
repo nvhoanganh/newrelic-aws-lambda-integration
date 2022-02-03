@@ -19,9 +19,9 @@ plugins:
 
 custom:
   newRelic:
-    accountId: 3400472
-    apiKey: NRAK-BAB5ZRMHQ59ZDKSYQV8U6P9IKEP
-    linkedAccount: your-new-relic-integration-account-name-here
+    accountId: YOUR_ACCOUNT_ID
+    apiKey: YOUR_API_KEY
+    linkedAccount: serverless
     enableExtension: true
     enableIntegration: true
     logEnabled: true

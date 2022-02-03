@@ -1,113 +1,149 @@
-<!--
-title: 'AWS Simple HTTP Endpoint example in NodeJS'
-description: 'This template demonstrates how to make a simple HTTP API with Node.js running on AWS Lambda and API Gateway using the Serverless Framework.'
-layout: Doc
-framework: v2
-platform: AWS
-language: nodeJS
-authorLink: 'https://github.com/serverless'
-authorName: 'Serverless, inc.'
-authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4'
--->
+# Enable New Relic Lambda Monitoring using Serverless framework
 
-# Serverless Framework Node HTTP API on AWS
+This tutorial demonstrates how to create brand new AWS Lambda app using Serverless framework and enable New Relic integration
 
-This template demonstrates how to make a simple HTTP API with Node.js running on AWS Lambda and API Gateway using the Serverless Framework.
+At the end of this tutorial, you will be able to:
 
-This template does not include any kind of persistence (database). For more advanced examples, check out the [serverless/examples repository](https://github.com/serverless/examples/) which includes Typescript, Mongo, DynamoDB and other examples.
+-   create a deploy a simple HTTP Lambda function using Node.js and Serverless framework
+-   enable (New Relic Lambda monitoring)[https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/enable-aws-lambda-monitoring]
+-   view APM, Distributed Tracing, Logs In Context for the Lambda function in New Relic One
 
-## Usage
-
-### Deployment
-
-```
-$ serverless deploy
-```
-
-After deploying, you should see output similar to:
+## Step 1: create and deploy new Lambda using Serverless framework
 
 ```bash
-Serverless: Packaging service...
-Serverless: Excluding development dependencies...
-Serverless: Creating Stack...
-Serverless: Checking Stack create progress...
-........
-Serverless: Stack create finished...
-Serverless: Uploading CloudFormation file to S3...
-Serverless: Uploading artifacts...
-Serverless: Uploading service aws-node-http-api.zip file to S3 (711.23 KB)...
-Serverless: Validating template...
-Serverless: Updating Stack...
-Serverless: Checking Stack update progress...
-.................................
-Serverless: Stack update finished...
-Service Information
-service: serverless-http-api
-stage: dev
-region: us-east-1
-stack: serverless-http-api-dev
-resources: 12
-api keys:
-  None
-endpoints:
-  ANY - https://xxxxxxx.execute-api.us-east-1.amazonaws.com/
+# install AWS cli at https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html and configure credentials
+# create new IAM user in AWS https://console.aws.amazon.com/iamv2/home#/users
+# give it required permission AdminstratorAccess OR use this https://shorturl.at/bizJV
+# > you will need the name of this account in later step
+aws configure
+
+# install serverless framework
+npm install -g serverless
+
+# create new serverless NodeJS HTTP App (select AWS - Node.js - HTTP API template) and deploy it
+# select No for register to Serverless dashboard and yes to deploy your project
+sls
+
+# login to https://console.aws.amazon.com/lambda/home
+# you should see your function in the list
+# click on the new function and click on API Gateway trigger
+# open the API Endpoint on your browser and make sure you can see reponse
+```
+
+## Step 2: Link NewRelic and AWS
+
+```bash
+# sign up for a free New Relic Account https://newrelic.com/signup, no credit card required
+# make sure you have Python 3 installed https://www.python.org/downloads/
+
+# install newrelic-lambda cli
+pip3 install newrelic-lambda-cli
+
+# get your NewRelic user and account key https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/, you will only need to do this once
+newrelic-lambda integrations install --nr-account-id YOUR_NR_ACCOUNT_ID --nr-api-key YOUR_NEW_RELIC_USER_KEY --aws-region us-east-1
+```
+
+## Step 3: enable Labmda monitoring
+
+-   modify the `serverless.yml` file as follow
+
+```yml
+service: newrelic-lambda-monitoring2
+frameworkVersion: '2 || 3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: '20201221'
+
 functions:
-  api: serverless-http-api-dev-hello
-layers:
-  None
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
+
+plugins:
+  - serverless-newrelic-lambda-layers
+
+custom:
+  newRelic:
+    accountId: YOUR_NR_ACCOUNT
+    apiKey: YOUR_NR_ACCOUNT_APIKEY
+    linkedAccount: ACCOUNT_YOU_CREATED_IN_STEP1_ABOVE
 ```
 
-_Note_: In current form, after deployment, your API is public and can be invoked by anyone. For production deployments, you might want to configure an authorizer. For details on how to do that, refer to [http event docs](https://www.serverless.com/framework/docs/providers/aws/events/apigateway/).
-
-### Invocation
-
-After successful deployment, you can call the created application via HTTP:
+- deploy the app again (make sure you are inside the app directory)
 
 ```bash
-curl https://xxxxxxx.execute-api.us-east-1.amazonaws.com/
+# install NewRelic serverless layer
+ npm install --save-dev serverless-newrelic-lambda-layers
+
+ # deploy the app again
+sls deploy
 ```
 
-Which should result in response similar to the following (removed `input` content for brevity):
-
-```json
-{
-  "message": "Go Serverless v2.0! Your function executed successfully!",
-  "input": {
-    ...
-  }
-}
-```
-
-### Local development
-
-You can invoke your function locally by using the following command:
+## Step 4: Run quick load test on your lambda
 
 ```bash
-serverless invoke local --function hello
+# install https://www.artillery.io
+npm install -g artillery@latest
+
+# run quick load test on your new lambda App for 30 seconds, 10 virtual users and rate of arrival of 3
+# replace the URL with the one you get from step 1
+artillery quick https://vh2j0gynz3.execute-api.us-east-1.amazonaws.com -n 10 -d 30 -r 3
 ```
 
-Which should result in response similar to the following:
+## Step 5: Login to New Relic and view Distributed Tracing for your labmda
+- login to https://one.newrelic.com and select your labmda function from Amazon Web Services > Lambda functions
+- select Distributed Tracing, you should see something like this
 
+![](2022-02-03-13-37-01.png)
+
+- notice the "No logs found" is displayed
+
+
+## Step 6: Enable Logs in Context for Lambda functions
+- modify `handler.js` file as follow
+
+```javascript
+"use strict";
+
+module.exports.hello = async (event) => {
+  console.log('Received request', JSON.stringify(event));
+  return {
+    statusCode: 200,
+    body: JSON.stringify(
+      {
+        message: "Go Serverless v2.0! Your function executed successfully!",
+        input: event,
+      },
+      null,
+      2
+    ),
+  };
+};
 ```
-{
-  "statusCode": 200,
-  "body": "{\n  \"message\": \"Go Serverless v2.0! Your function executed successfully!\",\n  \"input\": \"\"\n}"
-}
-```
 
-
-Alternatively, it is also possible to emulate API Gateway and Lambda locally by using `serverless-offline` plugin. In order to do that, execute the following command:
+- login to AWS Console https://console.aws.amazon.com/lambda/home and select your function
+- select Configuration > Environment variables > Edit
+- add `NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS` = `true`
+- deploy the app again by running `sls deploy`
 
 ```bash
-serverless plugin install -n serverless-offline
+# deploy the app again
+sls deploy
+
+# run load test again
+artillery quick https://vh2j0gynz3.execute-api.us-east-1.amazonaws.com -n 10 -d 30 -r 3
 ```
 
-It will add the `serverless-offline` plugin to `devDependencies` in `package.json` file as well as will add it to `plugins` in `serverless.yml`.
+- go back to New Relic and select new traces
+- you now should be able to see the Logs in Context
 
-After installation, you can start local emulation with:
+![](2022-02-03-13-50-13.png)
 
-```
-serverless offline
-```
+![](2022-02-03-13-50-45.png)
 
-To learn more about the capabilities of `serverless-offline`, please refer to its [GitHub repository](https://github.com/dherault/serverless-offline).
+![](2022-02-03-13-50-58.png)
