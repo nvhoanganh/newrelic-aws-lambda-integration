@@ -12,7 +12,7 @@ At the end of this tutorial, you will be able to:
 
 ```bash
 # install AWS cli at https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html and configure credentials
-# create new IAM user in AWS https://console.aws.amazon.com/iamv2/home#/users
+# create new IAM user in AWS https://console.aws.amazon.com/iamv2/home#/users (for example, I call it `serverless`)
 # give it required permission AdminstratorAccess OR use this https://shorturl.at/bizJV
 # > you will need the name of this account in later step
 aws configure
@@ -45,7 +45,7 @@ newrelic-lambda integrations install --nr-account-id YOUR_NR_ACCOUNT_ID --nr-api
 
 ## Step 3: enable Labmda monitoring
 
--   modify the `serverless.yml` file as follow
+-   modify the `serverless.yml` file as follow, for example ACCOUNT_YOU_CREATED_IN_STEP1_ABOVE is `serverless` for my case
 
 ```yml
 service: newrelic-lambda-monitoring2
